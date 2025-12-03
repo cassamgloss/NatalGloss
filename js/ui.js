@@ -44,13 +44,11 @@ const UI = {
         setTimeout(() => alert('O Ranking estará disponível na próxima atualização!'), 100);
     },
 
-    // --- FLUXO PRINCIPAL ---
     iniciarJogo: function() {
         if(this.jogoIniciado) return;
         this.jogoIniciado = true;
         if(this.somAtivo) this.sfxClick.play();
 
-        // 1. Inicia Transição
         const flake = document.getElementById('big-flake');
         if(flake) { void flake.offsetWidth; flake.classList.add('falling'); }
         
@@ -60,36 +58,34 @@ const UI = {
             else { clearInterval(fade); this.menuMusic.pause(); }
         }, 100);
 
-        // 2. Troca de Cena (no meio da transição)
         setTimeout(() => {
-            // Esconde UI do Menu
             const uiLayer = document.getElementById('ui-layer');
             const snowLayer = document.getElementById('snow-layer');
             if(uiLayer) uiLayer.style.display = 'none';
             if(snowLayer) snowLayer.style.display = 'none';
 
-            // Troca o fundo para o da Fase 1
             const bg = document.getElementById('menu-bg');
             if(bg) {
                 bg.style.backgroundImage = "url('assets/img/bg-fase1.png')";
-                bg.style.filter = "brightness(0.5)"; // Escurece para destacar instruções
+                bg.style.filter = "brightness(0.5)";
             }
 
-            // Mostra Instruções
             const instr = document.getElementById('instructions-layer');
             if(instr) instr.classList.remove('hidden');
 
         }, 1200);
     },
 
-    // Chamado pelo botão "Entendido"
     fecharInstrucoes: function() {
         if(this.somAtivo) this.sfxClick.play();
         
-        // Esconde instruções
         const instr = document.getElementById('instructions-layer');
         if(instr) instr.style.display = 'none';
 
+        // 1. INICIA O PHASER AGORA (Para começar a música e carregar a cena)
+        this.iniciarPhaser();
+
+        // 2. COMEÇA A CONTAGEM POR CIMA DO JOGO
         this.rodarContagem();
     },
 
@@ -111,11 +107,14 @@ const UI = {
             } else {
                 clearInterval(timer); layer.remove();
                 
-                // Remove o BG HTML
                 const bg = document.getElementById('menu-bg');
                 if(bg) bg.style.display = 'none';
 
-                this.iniciarPhaser();
+                // 3. AVISA A CENA DO JOGO PARA SOLTAR OS ITENS (START REAL)
+                if(window.game && window.game.scene) {
+                    const gameScene = window.game.scene.getScene('GameScene');
+                    if(gameScene) gameScene.iniciarGameplay();
+                }
             }
         }, 1000);
     },
@@ -141,7 +140,7 @@ const UI = {
         const container = document.getElementById('snow-layer');
         if (!container) return;
         container.innerHTML = ''; 
-        const qtd = 200; 
+        const qtd = 150; 
         for (let i = 0; i < qtd; i++) {
             let floco;
             if (Math.random() > 0.4) {
