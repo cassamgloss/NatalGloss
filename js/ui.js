@@ -141,7 +141,7 @@ const UI = {
         const container = document.getElementById('snow-layer');
         if (!container) return;
         container.innerHTML = ''; 
-        const qtd = 150; 
+        const qtd = 200; 
         for (let i = 0; i < qtd; i++) {
             let floco;
             if (Math.random() > 0.4) {
