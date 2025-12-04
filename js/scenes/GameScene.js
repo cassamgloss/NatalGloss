@@ -18,15 +18,20 @@ class GameScene extends Phaser.Scene {
         this.feverCurrent = 0;
         this.relogioPulsando = false;
 
-        // 2. DIFICULDADE
+// 2. DIFICULDADE
         if (this.level === 1) {
             this.tempoRestante = 30;
             this.velocidadeQueda = 200;
             this.spawnRate = 900;
-        } else if (this.level >= 2) {
+        } else if (this.level === 2) {
             this.tempoRestante = 50;
             this.velocidadeQueda = 300;
             this.spawnRate = 700;
+        } else if (this.level >= 3) {
+            // --- FASE 3: 1:10 (70 segundos) ---
+            this.tempoRestante = 70; 
+            this.velocidadeQueda = 350; // Um pouco mais rápido
+            this.spawnRate = 600; // Caos moderado
         }
 
         const w = this.scale.width;
@@ -105,18 +110,31 @@ class GameScene extends Phaser.Scene {
 
     // --- GAMEPLAY ---
 
-    iniciarGameplay() {
+iniciarGameplay() {
         if (this.jogoRolando) return;
         console.log("GAMEPLAY INICIADO!");
         this.jogoRolando = true;
 
-        // Inicia Timer e Spawns
+        // Inicia Timer e Spawns Normais
         this.timerEvento = this.time.addEvent({ delay: 1000, callback: this.atualizarTimer, callbackScope: this, loop: true });
         this.spawnEvento = this.time.addEvent({ delay: this.spawnRate, callback: this.spawnItem, callbackScope: this, loop: true });
 
         // Gelo na Fase 2+
         if (this.level >= 2) {
             this.obstacleTimer = this.time.addEvent({ delay: 5000, callback: this.spawnObstacle, callbackScope: this, loop: true });
+        }
+
+        // --- FASE 3: AGENDAMENTO DAS BISNAGAS DOURADAS ---
+        if (this.level >= 3) {
+            // Duração total: 80s. 
+            // 1ª: Logo no começo (após 3s)
+            this.time.delayedCall(3000, () => this.spawnGoldItem());
+            
+            // 2ª: No meio (após 40s)
+            this.time.delayedCall(40000, () => this.spawnGoldItem());
+            
+            // 3ª: Perto do fim (após 70s, ou seja, faltando 10s - junto com a tempestade!)
+            this.time.delayedCall(70000, () => this.spawnGoldItem());
         }
     }
 
@@ -175,6 +193,40 @@ spawnItem() {
             ice.setDepth(6);
             ice.setAngularVelocity(50);
             if (ice.postFX) ice.postFX.addGlow(0x00ffff, 1, 0, false, 0.1, 20);
+        }
+    }
+
+spawnGoldItem() {
+        if (!this.jogoRolando) return;
+        const x = Phaser.Math.Between(50, this.scale.width - 50);
+        
+        // Cria especificamente a bisnaga de ouro
+        let item = this.items.create(x, -200, 'bisnaga_gold');
+
+        if (item) {
+            item.tipoObj = 'gold'; // Tipo especial
+            item.setScale(0.08); // Um pouquinho maior que a normal
+            item.setVelocityY(450); // Cai mais rápido para ser desafiador!
+            item.setDepth(6); // Na frente de tudo
+            
+            // Efeito visual (Glow Dourado)
+            if (item.postFX) {
+                item.postFX.addGlow(0xffd700, 2, 0, false, 0.1, 30);
+            }
+
+            // RASTRO ESPECIAL (Mais intenso)
+            let rastro = this.add.particles(0, 0, 'soft_glow', {
+                speed: 20,
+                scale: { start: 0.8, end: 0 },
+                alpha: { start: 1, end: 0 },
+                lifespan: 800,
+                blendMode: 'ADD',
+                frequency: 10, // Muito denso
+                tint: 0xffd700, // Força a cor dourada
+                follow: item
+            });
+            rastro.setDepth(5);
+            item.setData('rastro', rastro);
         }
     }
 
@@ -241,36 +293,47 @@ coletarItem(item) {
         const itemX = item.x;
         const itemY = item.y;
 
-        // --- Limpeza do Rastro ao Coletar ---
+        // Limpeza do Rastro
         let rastro = item.getData('rastro');
         if (rastro) {
-            // Para de emitir e destroi depois de meio segundo (pra dar tempo do rastro sumir bonito)
             rastro.stop(); 
             this.time.delayedCall(500, () => { rastro.destroy(); });
         }
+        
+        // Verifica se é item dourado ANTES de destruir
+        let isGold = (item.tipoObj === 'gold');
 
         item.destroy();
 
-        let pts = this.emFeverMode ? 20 : 10;
+        // --- PONTUAÇÃO ---
+        let pts = 10;
+        if (isGold) {
+            pts = 50; // Ouro vale 50
+        } else if (this.emFeverMode) {
+            pts = 20;
+        }
+        
         this.score += pts;
         this.scoreText.setText('Brilho: ' + this.score);
 
-        // Score Pop
+        // Score Pop (Mais forte se for Ouro)
         this.tweens.add({
             targets: this.scoreText,
-            scale: 1.3,
-            duration: 100,
+            scale: isGold ? 1.6 : 1.3, // Pula mais se for ouro
+            duration: 150,
             yoyo: true,
             ease: 'Power1'
         });
 
+        // Som: Toca o de coleta normal, mas se quiser um especial pro ouro, seria aqui
+        this.sound.play('sfx_collect', { volume: 0.6 });
+
         this.burstEmitter.emitParticleAt(itemX, itemY, 8);
         this.mostrarTextoFlutuante(itemX, itemY, pts);
 
-        this.sound.play('sfx_collect', { volume: 0.6 });
-
+        // Ouro também conta pro Fever? Sim, vamos dar 50 de carga!
         if (!this.emFeverMode) {
-            this.feverCurrent += 20;
+            this.feverCurrent += isGold ? 50 : 20;
             this.atualizarFeverBar();
             if (this.feverCurrent >= 100) this.ativarFeverMode();
         }
@@ -326,7 +389,7 @@ criarRastroFantasma() {
 update() {
         if (!this.jogoRolando) return;
 
-        // 1. A COLA
+        // 1. A COLA (Mantém a Jéssica no chão)
         this.player.y = this.scale.height;
 
         // 2. TRAVA DE GELO
@@ -334,15 +397,14 @@ update() {
             return; 
         }
 
-        // --- 3. O GARI (Corrigido) ---
+        // 3. O GARI (Limpa itens que saíram da tela)
         this.items.children.each((item) => {
             if (item.active && item.y > this.scale.height + 100) {
-                // Pega o rastro guardado
                 let rastro = item.getData('rastro');
                 if (rastro) {
-                    rastro.destroy(); // Destroi a partícula
+                    rastro.destroy();
                 }
-                item.destroy(); // Destroi o item
+                item.destroy();
             }
         });
 
@@ -366,7 +428,24 @@ update() {
         } else {
             this.player.setVelocityX(0);
         }
-    }
+
+        // --- 5. TEMPESTADE FINAL (SEM PISCA-PISCA) ---
+        // Se faltar 10s ou menos na Fase 3 e ainda não acelerou:
+        if (this.level >= 3 && this.tempoRestante <= 10 && this.spawnRate > 200) {
+            console.log("TEMPESTADE ATIVADA!");
+            
+            // Apenas acelera o spawn para o modo CAOS
+            this.spawnRate = 250; 
+            
+            // Atualiza o timer do spawn imediatamente
+            if (this.spawnEvento) {
+                this.spawnEvento.delay = this.spawnRate;
+            }
+            
+            // Removido o trecho do tween (bg piscando)
+        }
+
+    } // <--- Fim do update
 
 // Adicionei o parâmetro "ajustarFisica" com valor padrão false
     forceSize(ajustarFisica = false) {

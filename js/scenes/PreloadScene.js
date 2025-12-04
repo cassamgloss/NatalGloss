@@ -14,6 +14,10 @@ class PreloadScene extends Phaser.Scene {
         this.load.image('bisnaga', 'assets/img/bisnaga.png');
         this.load.image('cartucho', 'assets/img/cartucho.png');
         // O obstáculo de gelo
+        
+        // --- NOVO: BISNAGA DE OURO ---
+        this.load.image('bisnaga_gold', 'assets/img/bisnaga-gold.png');
+
         this.load.image('snowflake_item', 'assets/img/snowflake-item.png');
 
         // --- PERSONAGEM (Jéssica) ---

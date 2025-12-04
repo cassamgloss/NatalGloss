@@ -46,11 +46,11 @@ const UI = {
     },
 
     // CONFIGURAÇÃO DOS TEXTOS
-    configurarInstrucoesFase: function(nivel) {
+configurarInstrucoesFase: function(nivel) {
         const title = document.getElementById('instr-title');
         const c1Title = document.getElementById('col1-title'); const c1Text = document.getElementById('col1-text'); const c1Icons = document.getElementById('col1-icons');
         const c2Title = document.getElementById('col2-title'); const c2Text = document.getElementById('col2-text'); const c2Warn = document.getElementById('col2-warn');
-        const imgCenter = document.getElementById('img-center'); // Seleciona imagem central
+        const imgCenter = document.getElementById('img-center'); 
 
         if (nivel === 1) {
             title.innerText = "SUA MISSÃO";
@@ -59,19 +59,32 @@ const UI = {
             c2Title.innerText = "BRILHO MÁXIMO"; c2Title.style.color = "#ffd700";
             c2Text.innerHTML = "Colete <strong>5 produtos</strong> seguidos para ativar a velocidade turbo!";
             c2Warn.innerText = "⚠️ Se perder um item, a contagem reseta!"; c2Warn.style.display = "block";
-            // Imagem Jessica
             if(imgCenter) imgCenter.src = "assets/img/jessica-in-game-box.png";
 
-        } else if (nivel >= 2) {
-            title.innerText = "FASE " + nivel;
+        } else if (nivel === 2) {
+            title.innerText = "FASE 2";
             c1Title.innerText = "RITMO ACELERADO"; c1Text.innerHTML = "Cuidado! Agora caem mais produtos e em maior velocidade.";
             c1Icons.innerHTML = '<img src="assets/img/bisnaga.png" class="icon-float">';
             
             c2Title.innerText = "CUIDADO COM O GELO"; c2Title.style.color = "#00e6e6";
             c2Text.innerHTML = "Evite os <strong>Flocos de Neve</strong>! Eles congelam a Jéssica por 1.5s.";
             c2Warn.style.display = "none";
-            // Imagem Gelo
             if(imgCenter) imgCenter.src = "assets/img/snowflake-item.png";
+
+        } else if (nivel >= 3) {
+            // --- INSTRUÇÕES ESPECÍFICAS DA FASE 3 ---
+            title.innerText = "FASE FINAL";
+            c1Title.innerText = "TESOURO RARO"; 
+            c1Text.innerHTML = "Fique atento! A lendária <strong>Bisnaga Dourada</strong> aparecerá 3 vezes.";
+            // Mostra a bisnaga de ouro nos ícones (se o arquivo existir na pasta img, senão usa a normal)
+            c1Icons.innerHTML = '<img src="assets/img/bisnaga-gold.png" class="icon-float" style="filter: drop-shadow(0 0 10px gold);">';
+            
+            c2Title.innerText = "VALE MUITO!"; c2Title.style.color = "#ffd700";
+            c2Text.innerHTML = "Cada Bisnaga Dourada vale <strong>50 PONTOS</strong>! Não deixe cair!";
+            c2Warn.innerText = "⚠️ O Gelo ainda está por aqui!"; c2Warn.style.display = "block";
+            
+            // Mantém a imagem do gelo ou volta pra Jéssica, você escolhe. Vou por a Jéssica focada.
+            if(imgCenter) imgCenter.src = "assets/img/jessica-in-game-box.png";
         }
     },
 
