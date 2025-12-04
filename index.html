@@ -12,7 +12,6 @@
     <div id="game-container"></div>
 
     <div id="menu-bg"></div>
-    
     <div id="snow-layer"></div>
 
     <div id="ui-layer">
@@ -31,46 +30,47 @@
         </div>
     </div>
 
-<div id="instructions-layer" class="hidden">
+    <div id="instructions-layer" class="hidden">
         <div class="instructions-box">
-            <h2 class="instr-main-title">SUA MISSÃO</h2>
+            <h2 id="instr-title" class="instr-main-title">SUA MISSÃO</h2>
             
             <div class="instr-columns">
                 <div class="instr-col">
-                    <h3>OBJETIVO</h3>
-                    <p>Ajude a Jéssica a coletar as <strong>Bisnagas</strong> e <strong>Cartuchos</strong> que caem do céu.</p>
-                    <div class="instr-icons">
+                    <h3 id="col1-title">OBJETIVO</h3>
+                    <p id="col1-text">Ajude a Jéssica a coletar as <strong>Bisnagas</strong> e <strong>Cartuchos</strong> que caem do céu.</p>
+                    <div id="col1-icons" class="instr-icons">
                         <img src="assets/img/bisnaga.png" alt="Bisnaga" class="icon-float">
                         <img src="assets/img/cartucho.png" alt="Cartucho" class="icon-float delay">
                     </div>
                 </div>
 
                 <div class="instr-col center-col">
-                    <h3 class="gold-text">BRILHO MÁXIMO</h3>
-                    <p>Colete <strong>5 produtos</strong> seguidos para ativar a velocidade turbo!</p>
-                    <p class="warning-text">⚠️ Se perder um item, a contagem reseta!</p>
+                    <h3 id="col2-title" class="gold-text">BRILHO MÁXIMO</h3>
+                    <p id="col2-text">Colete <strong>5 produtos</strong> seguidos para ativar a velocidade turbo!</p>
+                    <p id="col2-warn" class="warning-text">⚠️ Se perder um item, a contagem reseta!</p>
                     <div class="jessica-preview">
-                        <img src="assets/img/jessica-in-game-box.png" alt="Jessica Fever">
+                        <img id="img-center" src="assets/img/jessica-in-game-box.png" alt="Destaque">
                     </div>
                 </div>
 
                 <div class="instr-col">
-                    <h3>COMO JOGAR</h3>
-                    <p>Utilize as setas do teclado para mover a Jéssica.</p>
+                    <h3 id="col3-title">COMO JOGAR</h3>
+                    <p id="col3-text">Utilize as setas do teclado para mover a Jéssica.</p>
                     <div class="keys-container">
                         <div class="key key-left">⬅️</div>
                         <div class="key key-right">➡️</div>
                     </div>
                 </div>
-            </div> <button class="btn btn-gold btn-instr" onclick="UI.fecharInstrucoes()">ENTENDIDO!</button>
-            
-        </div> </div>
+            </div>
+
+            <button class="btn btn-gold btn-instr" onclick="UI.fecharInstrucoes()">ENTENDIDO!</button>
+        </div>
     </div>
 
     <div id="transition-layer"></div>
 
     <script src="js/scenes/PreloadScene.js"></script>
-    <script src="js/scenes/InstructionsScene.js"></script> <script src="js/scenes/GameScene.js"></script>
+    <script src="js/scenes/GameScene.js"></script>
     <script src="js/Main.js"></script>
     <script src="js/ui.js"></script>
 

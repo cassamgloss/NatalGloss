@@ -1,12 +1,15 @@
-// Main.js
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
     parent: 'game-container',
     backgroundColor: '#000000',
-    // LISTA DE CENAS: Preload -> Instruções -> Jogo
-    scene: [PreloadScene, InstructionsScene, GameScene],
+    render: {
+        antialias: true,
+        pixelArt: false,
+        roundPixels: false,
+        powerPreference: 'high-performance'
+    },
     physics: {
         default: 'arcade',
         arcade: { 
@@ -17,7 +20,9 @@ const config = {
     scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
-    }
+    },
+    // --- CORREÇÃO AQUI: REMOVI 'InstructionsScene' DA LISTA ---
+    scene: [ PreloadScene, GameScene ] 
 };
 
 window.game = new Phaser.Game(config);
