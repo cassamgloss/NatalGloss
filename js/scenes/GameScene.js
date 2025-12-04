@@ -120,7 +120,7 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    spawnItem() {
+spawnItem() {
         if (!this.jogoRolando) return;
         const x = Phaser.Math.Between(50, this.scale.width - 50);
         let tipo = Phaser.Math.RND.pick(['bisnaga', 'cartucho']);
@@ -129,7 +129,7 @@ class GameScene extends Phaser.Scene {
             tipo = 'snowflake_item';
         }
 
-        let item = this.items.create(x, -200, tipo); // Nasce fora da tela
+        let item = this.items.create(x, -200, tipo);
 
         if (item) {
             item.tipoObj = (tipo === 'snowflake_item') ? 'gelo' : 'produto';
@@ -141,6 +141,25 @@ class GameScene extends Phaser.Scene {
 
             if (item.tipoObj === 'gelo' && item.postFX) {
                 item.postFX.addGlow(0x00ffff, 1, 0, false, 0.1, 20);
+            }
+
+            // --- RASTRO "CAUDA DE COMETA" ---
+            if (item.tipoObj === 'produto') {
+                let rastro = this.add.particles(0, 0, 'soft_glow', {
+                    // Espalha um pouquinho para os lados para dar volume
+                    speedX: { min: -10, max: 10 }, 
+                    speedY: { min: -20, max: 0 }, 
+                    
+                    scale: { start: 0.8, end: 0 }, // Começa grande (80% da textura)
+                    alpha: { start: 1, end: 0 },   // Começa 100% visível (Brilho forte)
+                    lifespan: 700,                 // Dura quase 1 segundo (Rastro longo)
+                    blendMode: 'ADD',              // Brilha intensamente sobre o fundo
+                    frequency: 15,                 // Muito denso (cria uma linha contínua)
+                    follow: item
+                });
+                
+                rastro.setDepth(4); 
+                item.setData('rastro', rastro);
             }
         }
     }
@@ -217,21 +236,37 @@ congelarJogador() {
         });
     }
 
-    coletarItem(item) {
+coletarItem(item) {
         if (this.congelada) return;
         const itemX = item.x;
         const itemY = item.y;
+
+        // --- Limpeza do Rastro ao Coletar ---
+        let rastro = item.getData('rastro');
+        if (rastro) {
+            // Para de emitir e destroi depois de meio segundo (pra dar tempo do rastro sumir bonito)
+            rastro.stop(); 
+            this.time.delayedCall(500, () => { rastro.destroy(); });
+        }
+
         item.destroy();
 
         let pts = this.emFeverMode ? 20 : 10;
         this.score += pts;
         this.scoreText.setText('Brilho: ' + this.score);
 
+        // Score Pop
+        this.tweens.add({
+            targets: this.scoreText,
+            scale: 1.3,
+            duration: 100,
+            yoyo: true,
+            ease: 'Power1'
+        });
+
         this.burstEmitter.emitParticleAt(itemX, itemY, 8);
         this.mostrarTextoFlutuante(itemX, itemY, pts);
 
-// --- CORREÇÃO AQUI ---
-        // Toca direto. O Phaser busca no cache se não estiver instanciado.
         this.sound.play('sfx_collect', { volume: 0.6 });
 
         if (!this.emFeverMode) {
@@ -299,10 +334,15 @@ update() {
             return; 
         }
 
-        // 3. LIMPEZA DE MEMÓRIA
+        // --- 3. O GARI (Corrigido) ---
         this.items.children.each((item) => {
             if (item.active && item.y > this.scale.height + 100) {
-                item.destroy();
+                // Pega o rastro guardado
+                let rastro = item.getData('rastro');
+                if (rastro) {
+                    rastro.destroy(); // Destroi a partícula
+                }
+                item.destroy(); // Destroi o item
             }
         });
 
@@ -314,7 +354,6 @@ update() {
             if (this.player.texture.key !== 'player_andando') { 
                 this.player.setTexture('player_andando'); 
                 this.player.clearTint(); 
-                // Chama SEM mexer na física (evita o pulo)
                 this.forceSize(); 
             }
         } else if (this.cursors.right.isDown) {
@@ -322,12 +361,10 @@ update() {
             if (this.player.texture.key !== 'player_normal') { 
                 this.player.setTexture('player_normal'); 
                 this.player.clearTint(); 
-                // Chama SEM mexer na física (evita o pulo)
                 this.forceSize(); 
             }
         } else {
             this.player.setVelocityX(0);
-            // Parada (mantém a textura anterior)
         }
     }
 
@@ -405,30 +442,48 @@ update() {
         this.atualizarFeverBar(); // Chama a função para desenhar o estado inicial
     }
 
-    criarTimerUI() {
+criarTimerUI() {
         this.timerContainer = this.add.container(this.scale.width / 2, 45).setDepth(21);
         let bg = this.add.graphics();
         bg.fillStyle(0x000000, 0.7);
         bg.fillRoundedRect(-70, -25, 140, 50, 15);
-        this.timerText = this.add.text(0, 0, '00:30', { fontSize: '32px', color: '#ffffff', fontFamily: 'Montserrat' }).setOrigin(0.5);
+        
+        // --- CORREÇÃO AQUI ---
+        // Antes estava fixo '00:30'. Agora pega o valor real da variável this.tempoRestante.
+        // Se a fase for 2, ele já vai nascer mostrando '00:50'.
+        let tempoInicial = this.tempoRestante < 10 ? '0' + this.tempoRestante : this.tempoRestante;
+        
+        this.timerText = this.add.text(0, 0, '00:' + tempoInicial, { fontSize: '32px', color: '#ffffff', fontFamily: 'Montserrat' }).setOrigin(0.5);
+        
         this.timerContainer.add([bg, this.timerText]);
     }
 
-    criarTexturasParticulas() {
+criarTexturasParticulas() {
+        // 1. Poeira (Mantém igual)
         let g1 = this.make.graphics({ x: 0, y: 0, add: false });
         g1.fillStyle(0xffd700, 1);
         g1.fillCircle(4, 4, 4);
         g1.generateTexture('dust_particle', 8, 8);
         
+        // 2. Faísca (Mantém igual)
         let g2 = this.make.graphics({ x: 0, y: 0, add: false });
         g2.fillStyle(0xffffff, 1);
         g2.beginPath(); g2.moveTo(6, 0); g2.lineTo(12, 6); g2.lineTo(6, 12); g2.lineTo(0, 6); g2.closePath(); g2.fillPath();
         g2.generateTexture('spark_particle', 12, 12);
+
+        // --- 3. RASTRO DE IMPACTO (Aumentado) ---
+        let g3 = this.make.graphics({ x: 0, y: 0, add: false });
+        g3.fillStyle(0xffd700, 1); // Dourado Puro
+        g3.fillCircle(12, 12, 12);  // Raio 12 (Total 24px) - Bem maior que antes
+        g3.generateTexture('soft_glow', 24, 24);
     }
 
-    configurarEmissores() {
+configurarEmissores() {
+        // Emissor de poeira ao andar (já existia)
         this.particles = this.add.particles(0, 0, 'dust_particle', { speed: { min: 10, max: 50 }, angle: { min: 0, max: 360 }, scale: { start: 0.6, end: 0 }, alpha: { start: 0.8, end: 0 }, blendMode: 'ADD', lifespan: 800, frequency: 30, follow: this.player, followOffset: { y: this.player.height * 0.2 }, on: false });
         this.particles.setDepth(9);
+        
+        // Emissor de explosão ao coletar (já existia)
         this.burstEmitter = this.add.particles(0, 0, 'spark_particle', { speed: { min: 150, max: 250 }, angle: { min: 0, max: 360 }, scale: { start: 1, end: 0 }, blendMode: 'ADD', lifespan: 300, gravityY: 500, on: false });
         this.burstEmitter.setDepth(15);
     }
