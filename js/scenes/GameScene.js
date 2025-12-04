@@ -35,26 +35,33 @@ class GameScene extends Phaser.Scene {
         // 3. FUNDO
         const bgKey = `bg_fase${this.level}`;
         const tex = this.textures.exists(bgKey) ? bgKey : 'bg_fase1';
-        this.bg = this.add.image(w / 2, h / 2, tex);
-        
-        // Sombra no Chão
-        this.shadow = this.add.ellipse(w / 2, h * 0.9, 100, 20, 0x000000, 0.4).setDepth(9);
-
-        // 4. JOGADOR
-        this.player = this.physics.add.sprite(w / 2, h * 0.9, 'player_normal');
+        this.bg = this.add.image(w / 2, h / 2, tex);   
+    
+// 4. JOGADOR
+        this.player = this.physics.add.sprite(w / 2, h, 'player_normal');
+        this.player.setOrigin(0.5, 1); 
         this.player.setCollideWorldBounds(true);
         this.player.setDepth(10);
-        this.player.body.setSize(this.player.width * 0.5, this.player.height * 0.8);
+        
+        // --- CORREÇÃO DO TREMOR E GRAVIDADE ---
+        this.player.body.setAllowGravity(false); // Sem gravidade
+        
+        // Desliga a colisão com o teto e o chão (evita o tremor)
+        // Mantém apenas a colisão com as paredes laterais
+        this.player.body.checkCollision.up = false;
+        this.player.body.checkCollision.down = false;
 
-        // Ajusta tamanho inicial
+        this.player.body.setSize(this.player.width * 0.5, this.player.height * 0.8);
+        this.player.body.setOffset(this.player.width * 0.25, this.player.height * 0.2);
+
         this.resize({ width: w, height: h });
 
-        // 5. GRUPOS
+// 5. GRUPOS
         this.items = this.physics.add.group();
         this.physics.add.overlap(this.player, this.items, this.interagirItem, null, this);
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        // 6. UI DO JOGO (Placar e Barra)
+// 6. UI DO JOGO (Placar e Barra)
         // Chama as funções que agora estão expandidas lá embaixo
         this.criarPlacar();
         this.criarTimerUI();
@@ -161,21 +168,52 @@ class GameScene extends Phaser.Scene {
         this.coletarItem(item);
     }
 
-    congelarJogador() {
+congelarJogador() {
         if (this.congelada) return;
         this.congelada = true;
-        this.player.setTint(0x00ffff);
-        this.player.setVelocityX(0);
 
-        let texto = this.add.text(this.player.x, this.player.y - 80, 'CONGELADA!', {
-            fontFamily: 'Montserrat', fontSize: '24px', color: '#00ffff', stroke: '#000', strokeThickness: 4
+        this.sound.play('sfx_ice', { volume: 0.8 });
+
+        // 1. PÁRA TUDO
+        this.player.setVelocityX(0);
+        this.player.setVelocityY(0);
+
+        // 2. SOLUÇÃO NUCLEAR DO TREMOR:
+        // Desligamos o corpo físico. O Phaser para de calcular colisão ou gravidade.
+        // Ela vira apenas uma imagem estática na tela. Zero tremedeira.
+        this.player.body.enable = false; 
+
+        // 3. Troca a textura
+        if (this.player.texture.key === 'player_andando') {
+             this.player.setTexture('player_frozen_2');
+        } else {
+             this.player.setTexture('player_frozen_1');
+        }
+        
+        // Tint suave
+        this.player.setTint(0x99ffff); 
+        
+        // Garante posição
+        this.forceSize();
+
+        // Texto flutuante
+        let texto = this.add.text(this.player.x, this.player.y - this.player.displayHeight * 0.8, 'CONGELADA!', {
+            fontFamily: 'Montserrat', fontSize: '24px', color: '#99ffff', stroke: '#000', strokeThickness: 4
         }).setOrigin(0.5);
         
         this.tweens.add({ targets: texto, y: texto.y - 50, alpha: 0, duration: 1000, onComplete: () => texto.destroy() });
 
+        // Timer para descongelar
         this.time.delayedCall(1500, () => {
             this.congelada = false;
+            
+            // RELIGAR A FÍSICA
+            this.player.body.enable = true;
+            
+            // Volta a aparência ao normal
+            this.player.setTexture('player_normal');
             this.player.clearTint();
+            this.forceSize();
         });
     }
 
@@ -229,44 +267,86 @@ class GameScene extends Phaser.Scene {
         this.player.clearTint();
     }
 
-    criarRastroFantasma() {
+criarRastroFantasma() {
+        // Cria a imagem do fantasma na mesma posição da jogadora
         const ghost = this.add.image(this.player.x, this.player.y, this.player.texture.key);
+        
+        // --- CORREÇÃO DO GHOST TRAIL ---
+        // O fantasma precisa ter o mesmo ponto de origem (âncora nos pés) da jogadora.
+        // Se não fizermos isso, o centro do fantasma aparecerá nos pés dela.
+        ghost.setOrigin(this.player.originX, this.player.originY);
+
+        // Copia o tamanho exato que ela está agora
         ghost.setDisplaySize(this.player.displayWidth, this.player.displayHeight);
+        
         ghost.scaleX = this.player.scaleX;
         ghost.setAlpha(0.6);
         ghost.setTint(0xffd700);
         ghost.setBlendMode(Phaser.BlendModes.ADD);
-        ghost.setDepth(9);
+        ghost.setDepth(9); // Atrás da jogadora (que é depth 10)
+
         this.tweens.add({ targets: ghost, alpha: 0, scaleX: ghost.scaleX * 1.1, scaleY: ghost.scaleY * 1.1, duration: 500, onComplete: () => { ghost.destroy(); } });
     }
 
-    update() {
+update() {
         if (!this.jogoRolando) return;
-        if (this.congelada) { this.player.setVelocityX(0); return; }
+
+        // 1. A COLA
+        this.player.y = this.scale.height;
+
+        // 2. TRAVA DE GELO
+        if (this.congelada) { 
+            return; 
+        }
+
+        // 3. LIMPEZA DE MEMÓRIA
+        this.items.children.each((item) => {
+            if (item.active && item.y > this.scale.height + 100) {
+                item.destroy();
+            }
+        });
 
         const vel = this.emFeverMode ? 1000 : 700;
 
-        if (this.shadow && this.player) {
-            this.shadow.x = this.player.x;
-            this.shadow.y = this.player.y + (this.player.displayHeight / 2) - 10;
-        }
-
+        // 4. MOVIMENTAÇÃO
         if (this.cursors.left.isDown) {
             this.player.setVelocityX(-vel);
-            if (this.player.texture.key !== 'player_andando') { this.player.setTexture('player_andando'); this.forceSize(); }
+            if (this.player.texture.key !== 'player_andando') { 
+                this.player.setTexture('player_andando'); 
+                this.player.clearTint(); 
+                // Chama SEM mexer na física (evita o pulo)
+                this.forceSize(); 
+            }
         } else if (this.cursors.right.isDown) {
             this.player.setVelocityX(vel);
-            if (this.player.texture.key !== 'player_normal') { this.player.setTexture('player_normal'); this.forceSize(); }
+            if (this.player.texture.key !== 'player_normal') { 
+                this.player.setTexture('player_normal'); 
+                this.player.clearTint(); 
+                // Chama SEM mexer na física (evita o pulo)
+                this.forceSize(); 
+            }
         } else {
             this.player.setVelocityX(0);
+            // Parada (mantém a textura anterior)
         }
     }
 
-    forceSize() {
-        this.player.displayHeight = this.scale.height * 0.45;
+// Adicionei o parâmetro "ajustarFisica" com valor padrão false
+    forceSize(ajustarFisica = false) {
+        const h = this.scale.height;
+        
+        // Ajustes Visuais (Sempre ocorrem)
+        this.player.displayHeight = h * 0.45;
         this.player.scaleX = this.player.scaleY;
-        if (this.shadow) {
-            this.shadow.setDisplaySize(this.player.displayWidth * 0.6, this.player.displayWidth * 0.15);
+        this.player.y = h; 
+
+        // Ajustes Físicos (Só ocorrem quando a gente manda)
+        // Isso evita o "pulo" ao trocar de imagem andando
+        if (ajustarFisica && this.player.body) {
+             this.player.body.updateFromGameObject();
+             this.player.body.setAllowGravity(false); 
+             this.player.body.checkCollision.up = false;
+             this.player.body.checkCollision.down = false;
         }
     }
 
@@ -359,11 +439,10 @@ class GameScene extends Phaser.Scene {
         this.add.particles(0, 0, 'confeti', { x: { min: 0, max: this.scale.width }, y: -50, quantity: 2, frequency: 100, lifespan: 4000, gravityY: 100, speedY: { min: 100, max: 200 }, speedX: { min: -50, max: 50 }, scale: { start: 0.8, end: 0.5 }, rotate: { min: 0, max: 360 }, tint: [ 0xffd700, 0xffffff, 0xff0000, 0x00ff00 ], blendMode: 'ADD' }).setDepth(299);
     }
 
-    resize(gameSize) {
+resize(gameSize) {
         const w = gameSize.width;
         const h = gameSize.height;
         
-        // Atualiza o mundo físico!
         this.physics.world.setBounds(0, 0, w, h);
 
         if (this.bg && this.bg.type === 'Image') {
@@ -376,9 +455,12 @@ class GameScene extends Phaser.Scene {
         }
         
         if (this.player) {
-            this.player.y = h * 0.9;
-            this.forceSize();
+            this.player.y = h;
+            // AQUI: Passamos 'true' para recalcular a física
+            this.forceSize(true); 
+            this.player.x = Phaser.Math.Clamp(this.player.x, 0, w);
         }
+
         if (this.timerContainer) this.timerContainer.setPosition(w / 2, 45);
         if (this.containerPlacar) this.containerPlacar.setPosition(20, 20);
     }
