@@ -10,7 +10,6 @@
 <body>
 
     <div id="game-container"></div>
-
     <div id="menu-bg"></div>
     <div id="snow-layer"></div>
 
@@ -21,6 +20,9 @@
                 <img src="assets/img/tittle.png" class="menu-title-img" alt="Gloss Express">
                 <div class="button-container">
                     <button class="btn btn-gold" onclick="UI.iniciarJogo()">COMEÇAR AVENTURA</button>
+                    
+                    <button class="btn btn-gold-eterno" onclick="UI.iniciarBrilhoEterno()">BRILHO ETERNO</button>
+                    
                     <button class="btn btn-blue" onclick="UI.mostrarRanking()">RANKING</button>
                     <div id="btn-som" class="btn-sound" onclick="UI.alternarSom(event)">
                         <img src="assets/img/sound-icon.svg" alt="Som">
@@ -33,26 +35,20 @@
     <div id="instructions-layer" class="hidden">
         <div class="instructions-box">
             <h2 id="instr-title" class="instr-main-title">SUA MISSÃO</h2>
-            
             <div class="instr-columns">
                 <div class="instr-col">
                     <h3 id="col1-title">OBJETIVO</h3>
-                    <p id="col1-text">Ajude a Jéssica a coletar as <strong>Bisnagas</strong> e <strong>Cartuchos</strong> que caem do céu.</p>
-                    <div id="col1-icons" class="instr-icons">
-                        <img src="assets/img/bisnaga.png" alt="Bisnaga" class="icon-float">
-                        <img src="assets/img/cartucho.png" alt="Cartucho" class="icon-float delay">
-                    </div>
+                    <p id="col1-text">Ajude a Jéssica a coletar as <strong>Bisnagas</strong> e <strong>Cartuchos</strong>.</p>
+                    <div id="col1-icons" class="instr-icons"></div>
                 </div>
-
                 <div class="instr-col center-col">
                     <h3 id="col2-title" class="gold-text">BRILHO MÁXIMO</h3>
-                    <p id="col2-text">Colete <strong>5 produtos</strong> seguidos para ativar a velocidade turbo!</p>
-                    <p id="col2-warn" class="warning-text">⚠️ Se perder um item, a contagem reseta!</p>
+                    <p id="col2-text">Colete itens para pontuar!</p>
+                    <p id="col2-warn" class="warning-text">⚠️ Cuidado!</p>
                     <div class="jessica-preview">
                         <img id="img-center" src="assets/img/jessica-in-game-box.png" alt="Destaque">
                     </div>
                 </div>
-
                 <div class="instr-col">
                     <h3 id="col3-title">COMO JOGAR</h3>
                     <p id="col3-text">Utilize as setas do teclado para mover a Jéssica.</p>
@@ -62,7 +58,6 @@
                     </div>
                 </div>
             </div>
-
             <button class="btn btn-gold btn-instr" onclick="UI.fecharInstrucoes()">ENTENDIDO!</button>
         </div>
     </div>

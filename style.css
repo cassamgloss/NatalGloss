@@ -37,7 +37,43 @@ body { margin: 0; padding: 0; background-color: #000; font-family: 'Raleway', sa
 .btn-sound:hover { transform: scale(1.05); background: rgba(0, 0, 0, 0.8); }
 .btn-sound.muted img { opacity: 0.7; }
 .btn-sound.muted::after { content: ''; position: absolute; top: 50%; left: 50%; width: 70%; height: 3px; background-color: #ff3333; transform: translate(-50%, -50%) rotate(-45deg); border-radius: 2px; box-shadow: 0 0 2px rgba(0,0,0,0.8); pointer-events: none; }
+/* ... Mantenha o CSS anterior igual ... */
 
+/* NOVO: Botão Brilho Eterno */
+.btn-gold-eterno {
+    width: 80vw;
+    max-width: 450px;
+    height: 95px;
+    /* Aponta para a imagem que JÁ EXISTE */
+    background-image: url('assets/img/botao-comecar.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    
+    /* Estilo de Texto para diferenciar (já que a imagem é a mesma, o texto HTML aparece por cima) */
+    color: #3a2c1f;
+    font-family: 'Raleway', sans-serif;
+    text-transform: uppercase;
+    font-size: clamp(1rem, 2.5vw, 1.6rem);
+    font-weight: 900;
+    padding-top: 5px;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.4);
+    
+    border: none;
+    outline: none;
+    cursor: pointer;
+    filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.8));
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.btn-gold-eterno:hover {
+    transform: translateY(-2px) scale(1.03);
+    filter: brightness(1.15) contrast(1.1) drop-shadow(0 15px 25px rgba(0, 0, 0, 0.9));
+}
+
+.btn-gold-eterno:active {
+    transform: scale(0.98);
+}
 /* ==========================================================================
    5. TRANSIÇÃO, NEVE E CONTAGEM
    ========================================================================== */
