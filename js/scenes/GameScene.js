@@ -18,10 +18,10 @@ class GameScene extends Phaser.Scene {
         // Variáveis Modo Eterno
         this.vidas = 5;
         this.temEscudo = false;
-        this.pontosParaVida = 750;
+        this.pontosParaVida = 500;
         this.ultimoMilhar = 0;
         this.dificuldadeMultiplier = 1;
-        this.chanceGelo = 0.05;
+        this.chanceGelo = 0;
         this.geloNaTela = false;
 
         const w = this.scale.width;
@@ -65,11 +65,18 @@ class GameScene extends Phaser.Scene {
         }
         this.scoreText.setText('Brilho: ' + this.score);
 
-        // Música
+// --- MÚSICA ---
         this.sound.stopAll();
-        let musicKey = 'musica_fase1';
-        if (this.gameMode === 'eterno') musicKey = 'musica_fase2';
-        else if (this.level >= 2) musicKey = 'musica_fase2';
+        
+        let musicKey = 'musica_fase1'; // Padrão (Fase 1)
+
+        if (this.gameMode === 'eterno') {
+            musicKey = 'musica_fase2'; // Modo Eterno usa a música agitada
+        } else {
+            // Modo História: Verifica cada nível
+            if (this.level === 2) musicKey = 'musica_fase2';
+            if (this.level === 3) musicKey = 'musica_fase3'; // <--- AGORA SIM! Fase 3 toca a 3
+        }
         
         if (this.cache.audio.exists(musicKey)) {
             this.bgMusic = this.sound.add(musicKey, { loop: true, volume: 0.5 });
@@ -125,22 +132,15 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-aumentarDificuldadeEterna() {
+    aumentarDificuldadeEterna() {
         if (!this.jogoRolando) return;
         this.dificuldadeMultiplier += 0.1;
-        
-        // Velocidade e Spawn (Mantidos)
         this.velocidadeQueda = Math.min(600, 200 + (this.dificuldadeMultiplier * 30));
         let newRate = Math.max(400, 1200 - (this.dificuldadeMultiplier * 100));
         this.spawnEvento.delay = newRate;
         
-        if (!this.chanceGelo) this.chanceGelo = 0.05;
-        
-        // AJUSTE 3: Aumenta +5% a cada 15s, mas agora vai até 45% (antes travava em 30%)
-        // Isso vai deixar bem desafiador com o tempo!
-        this.chanceGelo = Math.min(0.45, this.chanceGelo + 0.05);
-        
-        console.log(`Dificuldade UP! Gelo: ${Math.floor(this.chanceGelo*100)}%`);
+        if (!this.chanceGelo) this.chanceGelo = 0;
+        this.chanceGelo = Math.min(0.3, this.chanceGelo + 0.05);
     }
 
     spawnItem() {
@@ -432,52 +432,26 @@ aumentarDificuldadeEterna() {
         }
     }
 
-criarVidasUI() {
-        this.vidasContainer = this.add.container(this.scale.width / 2, 55).setDepth(21);
+    criarVidasUI() {
+        this.vidasContainer = this.add.container(this.scale.width / 2, 45).setDepth(21);
         this.coracoes = [];
-        
-        // Fundo Cápsula
         let bg = this.add.graphics();
-        bg.fillStyle(0x000000, 0.6);
-        bg.lineStyle(3, 0xffd700, 1); // Borda Dourada
-        
-        // Cápsula larga para caber corações e escudo
-        bg.fillRoundedRect(-130, -30, 260, 60, 30);
-        bg.strokeRoundedRect(-130, -30, 260, 60, 30);
-        
+        bg.fillStyle(0x000000, 0.7);
+        bg.fillRoundedRect(-100, -25, 200, 50, 15);
         this.vidasContainer.add(bg);
         
-        // Ícone de Vida (Corações) com espaçamento ajustado
         let texCoracao = this.textures.exists('icone_coracao') ? 'icone_coracao' : 'bisnaga';
         let texEscudo = this.textures.exists('item_escudo') ? 'item_escudo' : 'bisnaga';
 
         for (let i = 0; i < 5; i++) {
-            // Distribui os corações centralizados
-            let xPos = -80 + (i * 40);
-            let coracao = this.add.image(xPos, 0, texCoracao);
-            coracao.setDisplaySize(32, 32); // Um pouco maior
-            
-            // Adiciona um brilho suave atrás do coração
-            if(coracao.postFX) coracao.postFX.addGlow(0xff0000, 1, 0, false, 0.1, 10);
-            
+            let coracao = this.add.image(-70 + (i * 35), 0, texCoracao);
+            coracao.setDisplaySize(28, 28);
             this.vidasContainer.add(coracao);
             this.coracoes.push(coracao);
         }
-        
-        // Ícone do Escudo (Fica na ponta direita, destacado)
-        this.escudoIconUI = this.add.image(95, 0, texEscudo);
-        this.escudoIconUI.setDisplaySize(40, 40);
+        this.escudoIconUI = this.add.image(80, 0, texEscudo);
+        this.escudoIconUI.setDisplaySize(30, 30);
         this.escudoIconUI.setVisible(false);
-        
-        // Efeito de pulso no escudo para chamar atenção quando ativo
-        this.tweens.add({
-            targets: this.escudoIconUI,
-            scale: '*=1.1',
-            duration: 500,
-            yoyo: true,
-            repeat: -1
-        });
-        
         this.vidasContainer.add(this.escudoIconUI);
     }
 
@@ -520,44 +494,8 @@ criarVidasUI() {
         }
     }
     
-criarPlacar() {
-        this.containerPlacar = this.add.container(20, 20).setDepth(20);
-        
-        // Fundo Semi-transparente elegante
-        let bg = this.add.graphics();
-        bg.fillStyle(0x000000, 0.6); // Preto com 60% opacidade
-        bg.lineStyle(3, 0xffd700, 1); // Borda Dourada Grossa
-        
-        // Desenha retângulo com borda arredondada
-        bg.fillRoundedRect(0, 0, 240, 70, 15);
-        bg.strokeRoundedRect(0, 0, 240, 70, 15);
-        
-        // Texto com Sombra (Drop Shadow) para leitura perfeita
-        this.scoreText = this.add.text(120, 22, 'Brilho: ' + this.score, { 
-            fontSize: '26px', 
-            fontFamily: 'Montserrat', 
-            fontStyle: 'bold',
-            color: '#ffffff' 
-        }).setOrigin(0.5, 0.5);
-        
-        this.scoreText.setShadow(2, 2, 'rgba(0,0,0,0.8)', 2);
-
-        // Barra de Fever (Embaixo do texto, mais fina e moderna)
-        this.feverBarFill = this.add.graphics();
-        
-        this.containerPlacar.add([bg, this.scoreText, this.feverBarFill]);
-        this.atualizarFeverBar(); 
-    }
-    
-atualizarFeverBar() {
-        if (this.feverBarFill) {
-            this.feverBarFill.clear();
-            this.feverBarFill.fillStyle(0xffd700); // Dourado
-            // Ajustei a posição Y para 50 (pé da caixa) e altura para 8px
-            this.feverBarFill.fillRoundedRect(15, 50, 210 * (this.feverCurrent / 100), 8, 4);
-        }
-    }
-    
+    criarPlacar() { this.containerPlacar = this.add.container(20, 20).setDepth(20); let bg = this.add.graphics(); bg.fillStyle(0x000000, 0.7); bg.fillRoundedRect(0, 0, 200, 70, 15); this.scoreText = this.add.text(50, 12, 'Brilho: ' + this.score, { fontSize: '22px', fontFamily: 'Montserrat', color: '#ffffff' }); this.feverBarFill = this.add.graphics(); this.containerPlacar.add([bg, this.scoreText, this.feverBarFill]); this.atualizarFeverBar(); }
+    atualizarFeverBar() { if (this.feverBarFill) { this.feverBarFill.clear(); this.feverBarFill.fillStyle(0xffd700); this.feverBarFill.fillRoundedRect(15, 45, 170 * (this.feverCurrent / 100), 12, 4); } }
     criarTimerUI() { this.timerContainer = this.add.container(this.scale.width / 2, 45).setDepth(21); let bg = this.add.graphics(); bg.fillStyle(0x000000, 0.7); bg.fillRoundedRect(-70, -25, 140, 50, 15); let tempoInicial = this.tempoRestante < 10 ? '0' + this.tempoRestante : this.tempoRestante; this.timerText = this.add.text(0, 0, '00:' + tempoInicial, { fontSize: '32px', color: '#ffffff', fontFamily: 'Montserrat' }).setOrigin(0.5); this.timerContainer.add([bg, this.timerText]); }
     mostrarTextoFlutuante(x, y, textoMsg, corOverride) { let cor = corOverride ? '#' + corOverride.toString(16) : (this.emFeverMode ? '#ffd700' : '#ffffff'); let txt = (typeof textoMsg === 'number') ? '+' + textoMsg : textoMsg; let texto = this.add.text(x, y, txt, { fontFamily: 'Montserrat', fontSize: '28px', fontStyle: 'bold', color: cor, stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5); texto.setDepth(20); this.tweens.add({ targets: texto, y: y - 50, alpha: 0, duration: 800, ease: 'Power1', onComplete: () => { texto.destroy(); } }); }
     ativarFeverMode() { if (this.emFeverMode) return; this.emFeverMode = true; this.sound.play('sfx_jackpot', { volume: 0.8, rate: 1.2 }); if(this.particles) this.particles.start(); this.trailTimer = this.time.addEvent({ delay: 70, callback: this.criarRastroFantasma, callbackScope: this, loop: true }); this.time.delayedCall(5000, () => { this.desativarFeverMode(); }); }
@@ -577,7 +515,7 @@ atualizarFeverBar() {
         this.mostrarTelaVitoria();
     }
     
-    // --- FUNÇÃO CORRIGIDA AQUI ---
+    // --- FUNÇÃO CORRIGIDA AQUI: DEFINIÇÃO DO TÍTULO ---
     mostrarTelaVitoria() {
         const cx = this.scale.width / 2; const cy = this.scale.height / 2;
         const winContainer = this.add.container(0, 0).setDepth(300);
@@ -601,11 +539,11 @@ atualizarFeverBar() {
         
         let tituloTexto = (this.gameMode === 'eterno') ? "FIM DE JOGO" : (this.level < 3 ? `FASE ${this.level}` : "PARABÉNS!");
         
-        // --- AQUI ESTAVAM FALTANDO AS DEFINIÇÕES ---
+        // --- AQUI ESTAVAM FALTANDO AS DEFINIÇÕES (CORRIGIDO) ---
         let tit = this.add.text(0, -boxH / 2 + 115, tituloTexto, { fontSize: '32px', color: '#ffd700', fontStyle: '900', fontFamily: 'Raleway' }).setOrigin(0.5);
         let labelPts = this.add.text(0, -10, "PONTUAÇÃO", { fontSize: '16px', color: '#888', fontFamily: 'Raleway', letterSpacing: 2 }).setOrigin(0.5);
         let ptsText = this.add.text(0, 40, "0", { fontSize: '90px', color: '#ffffff', fontStyle: 'bold', fontFamily: 'Montserrat' }).setOrigin(0.5);
-        // -------------------------------------------
+        // -------------------------------------------------------
 
         this.tweens.addCounter({ from: 0, to: this.score, duration: 1500, ease: 'Power2', onUpdate: (tween) => { ptsText.setText(Math.floor(tween.getValue())); }, onComplete: () => { this.tweens.add({ targets: ptsText, scale: 1.3, duration: 200, yoyo: true, ease: 'Power1', onStart: () => ptsText.setTint(0xffffaa), onComplete: () => ptsText.clearTint() }); } });
         
