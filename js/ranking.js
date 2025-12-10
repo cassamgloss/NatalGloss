@@ -4,7 +4,7 @@ import { getDatabase, ref, push, set, query, orderByChild, limitToLast, onValue 
 from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAiTtWQx808vmD8yHCUGQz7n_b4vqVq93M",
+    apiKey: "AIzaSyAiTtWQx808vmD8yHCUGQz7n_b4vqVq93M", 
     authDomain: "natalglossranking.firebaseapp.com",
     databaseURL: "https://natalglossranking-default-rtdb.firebaseio.com",
     projectId: "natalglossranking",
