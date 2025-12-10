@@ -208,3 +208,55 @@ img.snowflake { height: auto; }
     .menu-content { margin-bottom: 0; transform: scale(0.8); }
     .menu-title-img { width: 100%; }
 }
+/* RANKING */
+#ranking-layer {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    display: flex; justify-content: center; align-items: center;
+}
+.ranking-box {
+    background: linear-gradient(135deg, #1a1a1a, #000);
+    border: 3px solid #ffd700;
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%; max-width: 400px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+#ranking-list {
+    margin: 20px 0;
+    text-align: left;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'Montserrat', sans-serif;
+    color: white;
+}
+.rank-item {
+    display: flex; justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #333;
+    font-size: 1.1rem;
+}
+.rank-pos { color: #ffd700; font-weight: bold; width: 30px; }
+.rank-name { flex-grow: 1; text-transform: uppercase; }
+.rank-score { color: #00ffff; font-weight: bold; }
+
+#input-nome {
+    width: 70%; padding: 10px;
+    border: 2px solid #ffd700;
+    background: #222; color: #fff;
+    font-size: 1.2rem; text-align: center;
+    text-transform: uppercase;
+    margin-bottom: 10px; border-radius: 10px;
+}
+/* Botões do Ranking (Salvar e Fechar) */
+.small-btn { 
+    padding: 15px 0;        /* Mais altura pro dedo acertar fácil */
+    font-size: 1.5rem;      /* Letra GRANDE (antes era 1rem) */
+    font-weight: 800;       /* Negrito bem forte */
+    margin-top: 15px; 
+    width: 100%; 
+    text-transform: uppercase;
+    letter-spacing: 1px;    /* Espacinho entre letras pra ficar chique */
+}

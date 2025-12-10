@@ -147,7 +147,76 @@ configurarInstrucoesFase: function(nivel) {
             }
         }, 1000);
     },
+// --- FUNÇÕES DE RANKING ---
+    pontuacaoPendente: 0, // Guarda os pontos pra salvar
 
+    mostrarRanking: function() {
+        if(this.somAtivo) this.sfxClick.play();
+        const layer = document.getElementById('ranking-layer');
+        const inputArea = document.getElementById('ranking-input-area');
+        const lista = document.getElementById('ranking-list');
+        
+        layer.classList.remove('hidden');
+        layer.style.display = 'flex';
+        inputArea.classList.add('hidden'); // Esconde input por padrão
+        lista.innerHTML = '<p style="text-align:center">Carregando...</p>';
+
+        // Chama o Firebase
+        if (window.RankingAPI) {
+            window.RankingAPI.carregarTop10((dados) => {
+                lista.innerHTML = '';
+                dados.forEach((item, index) => {
+                    let cor = index === 0 ? 'color:#ffd700' : (index === 1 ? 'color:#c0c0c0' : (index === 2 ? 'color:#cd7f32' : ''));
+                    let html = `
+                    <div class="rank-item" style="${cor}">
+                        <span class="rank-pos">#${index+1}</span>
+                        <span class="rank-name">${item.nome}</span>
+                        <span class="rank-score">${item.pontos}</span>
+                    </div>`;
+                    lista.innerHTML += html;
+                });
+            });
+        }
+    },
+
+    abrirSalvarPontuacao: function(pontos) {
+        this.pontuacaoPendente = pontos;
+        this.mostrarRanking(); // Abre a tela
+        // Mostra a área de digitar nome
+        const inputArea = document.getElementById('ranking-input-area');
+        inputArea.classList.remove('hidden');
+        document.getElementById('input-nome').focus();
+    },
+
+    enviarPontuacao: function() {
+        const nomeInput = document.getElementById('input-nome');
+        const nome = nomeInput.value.trim();
+        
+        if (!nome) return alert("Digite um nome!");
+        
+        if (window.RankingAPI) {
+            window.RankingAPI.salvarRecorde(nome, this.pontuacaoPendente, (sucesso) => {
+                if(sucesso) {
+                    document.getElementById('ranking-input-area').classList.add('hidden');
+                    nomeInput.value = ''; // Limpa
+                    // Recarrega a lista para a pessoa ver o nome dela lá
+                    this.mostrarRanking();
+                } else {
+                    alert("Erro ao salvar. Verifique a internet.");
+                }
+            });
+        }
+    },
+
+    fecharRanking: function() {
+        if(this.somAtivo) this.sfxClick.play();
+        document.getElementById('ranking-layer').style.display = 'none';
+        
+        // Se o jogo acabou, recarrega a página ao fechar o ranking
+        if (this.jogoIniciado && window.gameScene && !window.gameScene.jogoRolando) {
+            window.location.reload();
+        }
+    },
     limparContagemAntiga: function() { const old = document.getElementById('countdown-layer'); if(old) old.remove(); },
     iniciarPhaser: function() { 
         if (window.game && window.game.scene) { 

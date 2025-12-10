@@ -75,7 +75,7 @@ class GameScene extends Phaser.Scene {
         } else {
             // Modo História: Verifica cada nível
             if (this.level === 2) musicKey = 'musica_fase2';
-            if (this.level === 3) musicKey = 'musica_fase3'; // <--- AGORA SIM! Fase 3 toca a 3
+            if (this.level === 3) musicKey = 'musica_fase3'; 
         }
         
         if (this.cache.audio.exists(musicKey)) {
@@ -547,7 +547,9 @@ class GameScene extends Phaser.Scene {
 
         this.tweens.addCounter({ from: 0, to: this.score, duration: 1500, ease: 'Power2', onUpdate: (tween) => { ptsText.setText(Math.floor(tween.getValue())); }, onComplete: () => { this.tweens.add({ targets: ptsText, scale: 1.3, duration: 200, yoyo: true, ease: 'Power1', onStart: () => ptsText.setTint(0xffffaa), onComplete: () => ptsText.clearTint() }); } });
         
-        let btnTexto = (this.gameMode === 'eterno') ? "JOGAR NOVAMENTE" : (this.level < 3 ? "PRÓXIMA FASE" : "JOGAR NOVAMENTE");
+  let btnTexto;
+        if (this.gameMode === 'eterno') btnTexto = "SALVAR RECORDE"; // Mudou aqui
+        else btnTexto = this.level < 3 ? "PRÓXIMA FASE" : "JOGAR NOVAMENTE";
         
         const btnY = boxH / 2 - 60;
         let btnBg = this.add.image(0, btnY, 'btn_gold').setInteractive({ cursor: 'pointer' });
@@ -555,11 +557,20 @@ class GameScene extends Phaser.Scene {
         if (btnBg.postFX) btnBg.postFX.addShadow(0, 5, 0.1, 1, 0x000000, 2, 0.5);
         let btnLabel = this.add.text(0, btnY, btnTexto, { fontSize: '22px', color: '#3a2c1f', fontStyle: '900', fontFamily: 'Raleway' }).setOrigin(0.5); btnLabel.y += 3;
         
-        btnBg.on('pointerdown', () => {
+btnBg.on('pointerdown', () => {
             this.sound.stopAll();
-            if (this.gameMode === 'eterno') { window.location.reload(); }
-            else if (this.level < 3) { this.scene.restart({ level: this.level + 1, score: this.score, mode: 'historia' }); }
-            else { window.location.reload(); }
+            
+            // LÓGICA NOVA DE RANKING
+            if (this.gameMode === 'eterno') {
+                // Em vez de reload, abre o ranking para salvar
+                if (window.UI) window.UI.abrirSalvarPontuacao(this.score);
+            }
+            else if (this.level < 3) { 
+                this.scene.restart({ level: this.level + 1, score: this.score, mode: 'historia' }); 
+            }
+            else { 
+                window.location.reload(); 
+            }
         });
         btnBg.on('pointerover', () => { this.tweens.add({ targets: btnBg, scaleX: baseScaleX * 1.05, scaleY: baseScaleY * 1.05, duration: 100 }); this.tweens.add({ targets: btnLabel, scaleX: 1.05, scaleY: 1.05, duration: 100 }); });
         btnBg.on('pointerout', () => { this.tweens.add({ targets: btnBg, scaleX: baseScaleX, scaleY: baseScaleY, duration: 100 }); this.tweens.add({ targets: btnLabel, scaleX: 1, scaleY: 1, duration: 100 }); });
